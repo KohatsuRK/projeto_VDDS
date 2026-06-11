@@ -1,13 +1,12 @@
 {
-  "name": "meu-projeto-credito-monorepo",
+  "name": "credit_engine_monorepo",
   "version": "1.0.0",
   "private": true,
-  "description": "Scripts de orquestração para o monorepo",
+  "description": "Scripts simplificados para o projeto unificado",
   "scripts": {
-    "install:all": "npm install --prefix frontend/host-shell && npm install --prefix frontend/remote-estudantil && npm install --prefix frontend/remote-imobiliario",
-    "dev:host": "cd frontend/host-shell && npm run dev",
-    "dev:estudantil": "cd frontend/remote-estudantil && npm run dev",
-    "dev:imobiliario": "cd frontend/remote-imobiliario && npm run dev",
-    "build:all": "npm run build --prefix frontend/host-shell && npm run build --prefix frontend/remote-estudantil && npm run build --prefix frontend/remote-imobiliario"
+    "install:all": "npm install --prefix frontend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "cd backend && uvicorn credit_engine.main:app --app-dir src --reload",
+    "build:frontend": "npm run build --prefix frontend"
   }
 }

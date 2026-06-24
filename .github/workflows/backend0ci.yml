@@ -45,5 +45,5 @@ jobs:
       run: |
         cd backend
         # Executa no modo CI para não travar o terminal interativo
-        mutmut run --no-progress --CI
+        mutmut run --CI
         mutmut results

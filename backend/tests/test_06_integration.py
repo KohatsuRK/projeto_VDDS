@@ -37,3 +37,59 @@ def test_service_fluxo_completo_e_idempotencia():
     # --- CENÁRIO 3: Histórico de Simulações ---
     historico = service.listar_historico(limite=50)
     assert len(historico) == 1  # Apenas 1 foi salva de verdade, a outra veio do cache
+
+
+def test_service_cliente_reprovado_sem_taxa():
+    repo = InMemoryCreditRepository()
+    service = CreditService(repositorio=repo)
+    
+    # Cliente que vai direto para REPROVADO (Não entra no cálculo de taxa da linha 46)
+    cliente_reprovado = ClienteSchema(
+        nome="Inimigo do Crédito",
+        idade=25,
+        renda_mensal=1000.0,
+        score_credito=200,
+        possui_nome_sujo=True,
+        possui_co_garantidor=False,
+        tipo_financiamento="VEICULO"
+    )
+    
+    resposta = service.avaliar_credito(cliente_reprovado)
+    assert resposta.status_proposta == "RECUSADO"
+    assert resposta.taxa_juros_aplicada is None
+
+def test_service_idempotencia_expirada(monkeypatch):
+    repo = InMemoryCreditRepository()
+    service = CreditService(repositorio=repo)
+    
+    cliente = ClienteSchema(
+        nome="Otavio Padin",
+        idade=28,
+        renda_mensal=6000.0,
+        score_credito=700,
+        possui_nome_sujo=False,
+        possui_co_garantidor=False,
+        tipo_financiamento="VEICULO"
+    )
+    
+    # Primeiro processamento normal
+    service.avaliar_credito(cliente)
+    
+    # Força a simulação do tempo passando (avança o relógio em 61 segundos)
+    # Isso simula o vencimento da constante JANELA_IDEMPOTENCIA_SEGUNDOS
+    futuro = datetime.now(timezone.utc) + timedelta(seconds=61)
+    
+    class MockDatetime:
+        @classmethod
+        def now(cls, tz=None):
+            return futuro
+            
+    # Altera temporariamente o comportamento do datetime interno do Python
+    monkeypatch.setattr("credit_engine.service.datetime", MockDatetime)
+    
+    # Executa novamente. Como passou de 60s, deve ignorar o cache e reprocessar (linha 122)
+    resposta_expirada = service.avaliar_credito(cliente)
+    assert "[CACHE]" not in resposta_expirada.motivo_decisao
+    assert len(repo.listar_simulacoes()) == 2  # Salvou um novo registro
+
+

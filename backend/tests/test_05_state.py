@@ -19,3 +19,33 @@ def test_repository_fluxo_completo_e_100_coverage():
     assert registro1.id == 1
     assert registro1.nome_proponente == "Renan Momo"
     assert registro1.hash_requisicao == "hash_secreto_123"
+
+# Salva um segundo registro para testar o incremento do ID e listagem
+    registro2 = repo.salvar_simulacao(
+        nome_proponente="Otavio Padin",
+        status_proposta="ANALISE_HUMANA",
+        taxa_juros_aplicada=9.0,
+        motivo_decisao="Score regular",
+        hash_requisicao="hash_secreto_456"
+    )
+    
+    assert registro2.id == 2
+
+# 3. Testa o 'buscar_por_hash' (Caminho Positivo)
+    busca_sucesso = repo.buscar_por_hash("hash_secreto_123")
+    assert busca_sucesso is not None
+    assert busca_sucesso.nome_proponente == "Renan Momo"
+
+    # 4. Testa o 'buscar_por_hash' (Caminho Negativo / Retorno None)
+    busca_falha = repo.buscar_por_hash("hash_inexistente")
+    assert busca_falha is None
+
+    # 5. Testa o 'listar_simulacoes' (Garante ordem reversa e limite)
+    lista_completa = repo.listar_simulacoes(limite=50)
+    assert len(lista_completa) == 2
+    # O mais recente deve vir primeiro devido ao reversed() no código original
+    assert lista_completa[0].id == 2 
+    
+    # Testa o limite de paginação
+    lista_com_limite = repo.listar_simulacoes(limite=1)
+    assert len(lista_com_limite) == 1

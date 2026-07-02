@@ -1,0 +1,39 @@
+import pytest
+import time
+from datetime import datetime, timezone, timedelta
+from credit_engine.service import CreditService
+from credit_engine.repository import InMemoryCreditRepository
+from credit_engine.schemas import ClienteSchema
+
+def test_service_fluxo_completo_e_idempotencia():
+    # 1. Configura as dependências reais em memória (Injeção de Dependência)
+    repo = InMemoryCreditRepository()
+    service = CreditService(repositorio=repo)
+    
+    # 2. Define o cliente padrão (Cenário de Aprovação -> Gera Taxa)
+    cliente_aprovado = ClienteSchema(
+        nome="Renan Momo",
+        idade=30,
+        renda_mensal=8000.0,
+        score_credito=800,
+        possui_nome_sujo=False,
+        possui_co_garantidor=False,
+        tipo_financiamento="IMOBILIARIO"
+    )
+
+# --- CENÁRIO 1: Primeiro Processamento (Fluxo Feliz com Taxa) ---
+    resposta_1 = service.avaliar_credito(cliente_aprovado)
+    assert resposta_1.status_proposta == "APROVADO"
+    assert resposta_1.taxa_juros_aplicada is not None
+    assert "[CACHE]" not in resposta_1.motivo_decisao
+    
+    # --- CENÁRIO 2: Idempotência Ativa (Mesmo cliente dentro da janela de 60s) ---
+    resposta_2 = service.avaliar_credito(cliente_aprovado)
+    assert resposta_2.status_proposta == "APROVADO"
+    # Garante que passou pelo bloco de cache das linhas 115-120
+    assert "[CACHE]" in resposta_2.motivo_decisao 
+    assert resposta_2.taxa_juros_aplicada == resposta_1.taxa_juros_aplicada
+
+    # --- CENÁRIO 3: Histórico de Simulações ---
+    historico = service.listar_historico(limite=50)
+    assert len(historico) == 1  # Apenas 1 foi salva de verdade, a outra veio do cache

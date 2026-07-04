@@ -12,6 +12,7 @@ Fronteiras deste sistema:
 import pytest
 from tests.conftest import cliente_factory
 from credit_engine.rules import avaliar_credito, calcular_taxa_juros
+
 from credit_engine.constants import (
     IDADE_MINIMA, IDADE_MAXIMA,
     SCORE_MINIMO, SCORE_MAXIMO,
@@ -36,6 +37,7 @@ from credit_engine.constants import (
     (IDADE_MAXIMA,     "APROVADO"),   # 75 — exatamente no máximo
     (IDADE_MAXIMA + 1, "RECUSADO"),   # 76 — acima do máximo
 ])
+
 def test_bva_fronteiras_idade(idade, status_esperado):
     """BVA nas fronteiras de elegibilidade por idade (RN01)."""
     cliente = cliente_factory(idade=idade)
@@ -130,3 +132,16 @@ def test_bva_fronteiras_modificadores_taxa(score, taxa_base, modificador_esperad
     assert taxa == pytest.approx(esperado, abs=0.0001), (
         f"Score {score}: taxa esperada {esperado:.4f}, obtida {taxa:.4f}"
     )
+
+def test_bva_aprovado_padrao_e_garantidor():
+
+    # Cliente com Renda > 5000, Score > 600 E possui_co_garantidor = True
+    cliente = cliente_factory(
+        renda_mensal=6000.0, 
+        score_credito=750, 
+        possui_co_garantidor=True,
+        tipo_financiamento="IMOBILIARIO"
+    )
+    resultado = avaliar_credito(cliente)
+    assert resultado["status"] == "APROVADO"
+    assert "com co-garantidor adicional" in resultado["motivo"]

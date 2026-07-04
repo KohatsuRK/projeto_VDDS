@@ -97,3 +97,11 @@ frontend/**/.env.production.local
 *.tmp
 *.temp
 *.log
+
+# Arquivos de lock (opcional, mas bom para limpar)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Arquivos de teste e cobertura de testes (opcional, mas bom para limpar)
+.coverage

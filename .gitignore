@@ -61,6 +61,10 @@ backend/mutants/
 backend/MUTATION_REPORT.md
 # OBS: O 'setup.cfg' e 'requirements.txt' DEVEM ser versionados, então não os ignore.
 
+# Bancos SQLite locais
+backend/creditcalc.db
+backend/newcreditcalc.db
+
 # ==============================================================================
 # 4. FRONTEND (React e Vue - Monorepo)
 # ==============================================================================

@@ -5,8 +5,6 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 TZ_BRAZIL = ZoneInfo("America/Sao_Paulo")
-# ── Configuração global da página ────────────────────────────────
-# Deve ser a PRIMEIRA chamada Streamlit do script — antes de qualquer st.*
 st.set_page_config(
     page_title="CreditCalc Engine",
     page_icon="🏦",
@@ -14,9 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── URL base da API ───────────────────────────────────────────────
-# Em desenvolvimento: backend rodando localmente
-# Em produção (Heroku): trocar pelo URL do backend deployado
+
 API_BASE_URL = "http://localhost:8000"
 
 
@@ -31,11 +27,6 @@ def chamar_api_avaliar(dados: dict) -> dict:
     Retorna um dict com:
         {"ok": True,  "dados": {...}}   → sucesso
         {"ok": False, "erro": "..."}    → falha de regra ou conexão
-
-    Por que separar a chamada HTTP da lógica de exibição?
-    Porque nos testes de integração você pode mockar esta função
-    sem precisar de um servidor real. Também centraliza o tratamento
-    de erros HTTP em um único lugar.
     """
     try:
         response = requests.post(
@@ -143,7 +134,6 @@ def exibir_resultado(resultado: dict):
 
 
 def badge_status(status: str) -> str:
-    """Retorna emoji para colorir a tabela de histórico."""
     return {"APROVADO": "✅", "ANALISE_HUMANA": "⏳", "RECUSADO": "❌"}.get(status, "❓")
 
 
@@ -161,11 +151,13 @@ def pagina_simulacao():
         with col1:
             nome = st.text_input(
                 "Nome completo",
+                key="input_nome",    
                 placeholder="Ex: João da Silva",
                 help="Mínimo 2 caracteres",
             )
             idade = st.number_input(
                 "Idade",
+                key="input_idade",
                 min_value=0, max_value=130,
                 value=30,
                 help="Elegível entre 18 e 75 anos (RN01)",
@@ -174,6 +166,7 @@ def pagina_simulacao():
         with col2:
             renda_mensal = st.number_input(
                 "Renda Mensal (R$)",
+                key="input_renda",
                 min_value=0.0,
                 value=5500.0,
                 step=500.0,
@@ -182,6 +175,7 @@ def pagina_simulacao():
             )
             score_credito = st.number_input(
                 "Score de Crédito",
+                key="input_score",
                 min_value=0, max_value=1000,
                 value=720,
                 help="0 = Baixo risco de aprovação · 1000 = Excelente",
@@ -194,6 +188,7 @@ def pagina_simulacao():
         with col3:
             possui_nome_sujo = st.checkbox(
                 "⚠️  Possui restrição cadastral (nome sujo)",
+                key="input_nome_sujo",
                 value=False,
                 help="Se marcado, a proposta é recusada automaticamente (RN01)",
             )
@@ -201,6 +196,7 @@ def pagina_simulacao():
         with col4:
             possui_co_garantidor = st.checkbox(
                 "🤝  Possui co-garantidor",
+                key="input_tipo",
                 value=False,
                 help="Co-garantidor permite aprovação com renda a partir de R$ 3.000",
             )
@@ -224,9 +220,6 @@ def pagina_simulacao():
         )
 
     # ── Processamento após submit ─────────────────────────────────
-    # Este bloco roda FORA do form, depois que o botão foi clicado.
-    # O "if submitted" é True apenas no ciclo de execução imediatamente
-    # após o clique — nas execuções seguintes volta a ser False.
     if submitted:
         if not nome or len(nome.strip()) < 2:
             st.error("⚠️ Nome deve ter pelo menos 2 caracteres.")
@@ -269,7 +262,7 @@ def pagina_simulacao():
 
 def pagina_historico():
     st.title("📊 Histórico de Simulações")
-    st.caption("Últimas análises processadas pelo motor de crédito (RF05).")
+    st.caption("Últimas análises processadas pelo motor de crédito.")
 
     col_limite, col_refresh = st.columns([3, 1])
     with col_limite:

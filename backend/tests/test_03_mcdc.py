@@ -1,14 +1,3 @@
-"""
-A decisão complexa do sistema (RN02):
-    APROVADO se: (A AND B) OR (C AND D)
-    onde:
-        A = renda_mensal > 5000
-        B = score_credito > 600
-        C = possui_co_garantidor == True
-        D = renda_mensal > 3000
-
-Para cobrir MC/DC, precisamos de um par para cada condição A, B, C, D.
-"""
 
 import pytest
 from tests.conftest import cliente_factory

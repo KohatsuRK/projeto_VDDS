@@ -11,9 +11,7 @@ from tests.conftest import cliente_factory
 from credit_engine.rules import avaliar_credito
 
 
-# ==============================================================================
 # 1. Caminho Feliz — Classe Válida Completa
-# ==============================================================================
 
 def test_caminho_feliz_aprovado():
     """
@@ -25,9 +23,7 @@ def test_caminho_feliz_aprovado():
     assert resultado["status"] == "APROVADO"
 
 
-# ==============================================================================
 # 2. Partições Inválidas — Uma variável inválida por vez
-# ==============================================================================
 
 @pytest.mark.parametrize("campo, valor, status_esperado", [
     # Classe inválida: idade abaixo do mínimo
@@ -196,9 +192,7 @@ def test_classes_de_veredito_nas_fronteiras_críticas(renda, score, co_garantido
     assert resultado["status"] == status_esperado
 
 
-# ==============================================================================
 # 3. Classes por Tipo de Financiamento
-# ==============================================================================
 
 @pytest.mark.parametrize("tipo", ["IMOBILIARIO", "ESTUDANTIL"])
 def test_tipos_financiamento_validos(tipo):

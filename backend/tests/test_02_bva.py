@@ -25,9 +25,7 @@ from credit_engine.constants import (
 )
 
 
-# ==============================================================================
 # 1. BVA — Fronteira de Idade
-# ==============================================================================
 
 @pytest.mark.parametrize("idade, status_esperado", [
     (IDADE_MINIMA - 1, "RECUSADO"),   # 17 — abaixo do mínimo
@@ -48,9 +46,7 @@ def test_bva_fronteiras_idade(idade, status_esperado):
     )
 
 
-# ==============================================================================
 # 2. BVA — Fronteira de Score (validade do dado)
-# ==============================================================================
 
 @pytest.mark.parametrize("score, status_esperado", [
     # Score inválido é rejeitado pelo Pydantic (ge=0, le=1000)
@@ -67,9 +63,7 @@ def test_bva_fronteiras_score_validade(score, status_esperado):
     assert resultado["status"] == status_esperado
 
 
-# ==============================================================================
 # 3. BVA — Fronteira de Aprovação (score 600)
-# ==============================================================================
 
 @pytest.mark.parametrize("score, status_esperado", [
     (SCORE_MINIMO_APROVACAO - 1, "ANALISE_HUMANA"),  # 599 — não aprova
@@ -87,9 +81,7 @@ def test_bva_fronteira_score_aprovacao(score, status_esperado):
     assert resultado["status"] == status_esperado
 
 
-# ==============================================================================
 # 4. BVA — Fronteira de Análise Humana (score 400)
-# ==============================================================================
 
 @pytest.mark.parametrize("score, status_esperado", [
     (SCORE_MINIMO_ANALISE_HUMANA - 1, "RECUSADO"),       # 399 — recusado
@@ -106,9 +98,7 @@ def test_bva_fronteira_analise_humana(score, status_esperado):
     assert resultado["status"] == status_esperado
 
 
-# ==============================================================================
 # 5. BVA — Fronteiras de Modificadores de Taxa (calcular_taxa_juros)
-# ==============================================================================
 
 @pytest.mark.parametrize("score, taxa_base, modificador_esperado", [
     # Fronteira Score Excelente: 800 → Bom, 801 → Excelente

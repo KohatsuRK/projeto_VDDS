@@ -38,7 +38,7 @@ uvicorn==0.48.0
 
 
 # Banco de dados
-sqlalchemy==2.0.30
+sqlalchemy>=2.0.36
 
 # HTTP client (para testes de integração e busca da taxa Selic)
 httpx==0.27.0

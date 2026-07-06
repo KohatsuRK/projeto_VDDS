@@ -57,7 +57,13 @@ backend/.flake8
 
 # Ferramentas de Mutação e Métricas (Mutmut e Radon)
 backend/.mutmut-cache
+backend/mutants/
+backend/MUTATION_REPORT.md
 # OBS: O 'setup.cfg' e 'requirements.txt' DEVEM ser versionados, então não os ignore.
+
+# Bancos SQLite locais
+backend/creditcalc.db
+backend/newcreditcalc.db
 
 # ==============================================================================
 # 4. FRONTEND (React e Vue - Monorepo)
@@ -97,3 +103,11 @@ frontend/**/.env.production.local
 *.tmp
 *.temp
 *.log
+
+# Arquivos de lock (opcional, mas bom para limpar)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Arquivos de teste e cobertura de testes (opcional, mas bom para limpar)
+.coverage

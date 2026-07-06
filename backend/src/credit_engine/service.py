@@ -1,4 +1,3 @@
-
 import hashlib
 import json
 from datetime import datetime, timezone, timedelta
@@ -9,10 +8,11 @@ from credit_engine.repository import CreditRepository
 from credit_engine import rules
 
 
-# Janela de idempotência: 60 segundos (RNF02)
+# Define a janela máxima para reaproveitar uma resposta cacheada.
 JANELA_IDEMPOTENCIA_SEGUNDOS = 60
 
 
+# Implementa os casos de uso da análise de crédito.
 class CreditService:
     """
     Serviço principal de análise de crédito.
@@ -23,36 +23,49 @@ class CreditService:
         service = CreditService(SqlCreditRepository(db))    # produção
     """
 
+    # Inicializa o serviço com o repositório de simulações.
     def __init__(self, repositorio: CreditRepository):
         self.repositorio = repositorio
 
-    def avaliar_credito(self, cliente: ClienteSchema) -> RespostaSchema:
+    # Avalia uma proposta de crédito com usuário opcional.
+    def avaliar_credito(self, cliente: ClienteSchema, usuario_id: Optional[int] = None) -> RespostaSchema:
         """
         Caso de uso principal: avaliar uma proposta de crédito.
         Retorna sempre um RespostaSchema — seja do cache ou recém-calculado.
         """
-        hash_req = self._gerar_hash(cliente)
+        hash_req = self._gerar_hash(cliente, usuario_id=usuario_id)
 
-        # --- Idempotência ---
+        # Verifica se existe resultado recente equivalente para o mesmo escopo.
         resultado_cacheado = self._verificar_idempotencia(hash_req)
         if resultado_cacheado:
             return resultado_cacheado
 
-        # --- Processamento ---
+        # Executa a regra principal de análise de crédito.
         veredito = rules.avaliar_credito(cliente)
 
+        # Calcula a taxa apenas para propostas não recusadas.
         taxa: Optional[float] = None
         if veredito["status"] in ("APROVADO", "ANALISE_HUMANA"):
             taxa = rules.calcular_taxa_juros(cliente)
 
-        # --- Persistência ---
-        registro = self.repositorio.salvar_simulacao(
-            nome_proponente=cliente.nome,
-            status_proposta=veredito["status"],
-            taxa_juros_aplicada=taxa,
-            motivo_decisao=veredito["motivo"],
-            hash_requisicao=hash_req,
-        )
+        # Persiste a simulação com vínculo opcional ao usuário.
+        if usuario_id is None:
+            registro = self.repositorio.salvar_simulacao(
+                nome_proponente=cliente.nome,
+                status_proposta=veredito["status"],
+                taxa_juros_aplicada=taxa,
+                motivo_decisao=veredito["motivo"],
+                hash_requisicao=hash_req,
+            )
+        else:
+            registro = self.repositorio.salvar_simulacao(
+                nome_proponente=cliente.nome,
+                status_proposta=veredito["status"],
+                taxa_juros_aplicada=taxa,
+                motivo_decisao=veredito["motivo"],
+                hash_requisicao=hash_req,
+                usuario_id=usuario_id,
+            )
 
         return RespostaSchema(
             status_proposta=veredito["status"],
@@ -61,25 +74,20 @@ class CreditService:
             data_processamento=registro.data_processamento,
         )
 
-    def listar_historico(self, limite: int = 50) -> list:
-        """Retorna as últimas N simulações para o endpoint de histórico."""
-        return self.repositorio.listar_simulacoes(limite=limite)
+    # Lista o histórico geral ou filtrado por usuário.
+    def listar_historico(self, limite: int = 50, usuario_id: Optional[int] = None) -> list:
+        if usuario_id is None:
+            return self.repositorio.listar_simulacoes(limite=limite)
+        return self.repositorio.listar_simulacoes_por_usuario(usuario_id=usuario_id, limite=limite)
 
-    # ------------------------------------------------------------------
-    # Métodos privados
-    # ------------------------------------------------------------------
-
-    def _gerar_hash(self, cliente: ClienteSchema) -> str:
+    # Gera um hash determinístico para a requisição no escopo correto.
+    def _gerar_hash(self, cliente: ClienteSchema, usuario_id: Optional[int] = None) -> str:
         """
         Gera um hash MD5 determinístico dos campos relevantes.
 
-        Por que MD5 aqui e não SHA256?
-        Não é contexto de segurança criptográfica — é só um fingerprint
-        para identificar requisições iguais. MD5 é suficiente e mais rápido.
-
-        Os campos usados no hash devem ser TODOS os campos que determinam
-        o resultado. Se mudar qualquer campo, o hash muda, e uma nova
-        análise é feita.
+        Para manter compatibilidade com os testes antigos:
+        - usuário anônimo: mantém exatamente o hash antigo
+        - usuário autenticado: adiciona o usuario_id ao payload
         """
         dados = {
             "nome": cliente.nome,
@@ -90,9 +98,14 @@ class CreditService:
             "possui_co_garantidor": cliente.possui_co_garantidor,
             "tipo_financiamento": cliente.tipo_financiamento,
         }
+
+        if usuario_id is not None:
+            dados["usuario_id"] = usuario_id
+
         payload = json.dumps(dados, sort_keys=True)
         return hashlib.md5(payload.encode()).hexdigest()
 
+    # Verifica se existe uma resposta recente em cache para o hash.
     def _verificar_idempotencia(self, hash_req: str) -> Optional[RespostaSchema]:
         """
         Verifica se existe um resultado recente para este hash.
@@ -106,7 +119,7 @@ class CreditService:
         agora = datetime.now(timezone.utc)
         data_proc = registro.data_processamento
 
-        # Garante que ambos os datetimes têm timezone para comparação
+        # Garante timezone consistente para comparação.
         if data_proc.tzinfo is None:
             data_proc = data_proc.replace(tzinfo=timezone.utc)
 

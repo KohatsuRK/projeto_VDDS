@@ -66,3 +66,30 @@ class SimulacaoRegistradaSchema(BaseModel):
     taxa_juros_aplicada: Optional[float]
     motivo_decisao: str
     data_processamento: datetime
+
+ # Schema de entrada para cadastro de usuário.
+class UsuarioCreateSchema(BaseModel):
+    nome: str = Field(..., min_length=2)
+    email: str
+    senha: str = Field(..., min_length=6)
+
+
+# Schema de entrada para login de usuário.
+class UsuarioLoginSchema(BaseModel):
+    email: str
+    senha: str
+
+
+# Schema público de saída com dados do usuário.
+class UsuarioPublicSchema(BaseModel):
+    id: int
+    nome: str
+    email: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Schema de resposta do login com token e usuário.
+class UsuarioLoginResponseSchema(BaseModel):
+    token: str
+    usuario: UsuarioPublicSchema

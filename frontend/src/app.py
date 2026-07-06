@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -12,8 +13,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-API_BASE_URL = "http://localhost:8000"
+# ── URL base da API ───────────────────────────────────────────────
+# Em desenvolvimento: backend rodando localmente
+API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -30,7 +32,7 @@ def chamar_api_avaliar(dados: dict) -> dict:
     """
     try:
         response = requests.post(
-            f"{API_BASE_URL}/api/v1/credit/evaluate",
+            f"{API_URL}/api/v1/credit/evaluate",
             json=dados,
             timeout=10,
         )
@@ -48,7 +50,7 @@ def chamar_api_avaliar(dados: dict) -> dict:
             "ok": False,
             "erro": (
                 "Não foi possível conectar à API.\n"
-                f"Verifique se o backend está rodando em {API_BASE_URL}\n"
+                f"Verifique se o backend está rodando em {API_URL}\n"
                 "Comando: uvicorn credit_engine.main:app --reload --app-dir src"
             )
         }
@@ -60,7 +62,7 @@ def chamar_api_historico(limite: int = 50) -> dict:
     """Chama GET /api/v1/history e retorna a lista de simulações."""
     try:
         response = requests.get(
-            f"{API_BASE_URL}/api/v1/history",
+            f"{API_URL}/api/v1/history",
             params={"limite": limite},
             timeout=10,
         )
@@ -75,7 +77,7 @@ def chamar_api_historico(limite: int = 50) -> dict:
 def checar_saude_api() -> bool:
     """Chama GET /health para verificar se o backend está rodando."""
     try:
-        r = requests.get(f"{API_BASE_URL}/health", timeout=3)
+        r = requests.get(f"{API_URL}/health", timeout=3)
         return r.status_code == 200
     except Exception:
         return False
@@ -395,7 +397,7 @@ def sidebar():
             st.success("🟢 API Online")
         else:
             st.error("🔴 API Offline")
-            st.caption(f"Esperando em: `{API_BASE_URL}`")
+            st.caption(f"Esperando em: `{API_URL}`")
 
         st.divider()
 

@@ -26,7 +26,6 @@ from credit_engine.constants import (
 ])
 
 def test_bva_fronteiras_idade(idade, status_esperado):
-    """BVA nas fronteiras de elegibilidade por idade (RN01)."""
     cliente = cliente_factory(idade=idade)
     resultado = avaliar_credito(cliente)
     assert resultado["status"] == status_esperado, (

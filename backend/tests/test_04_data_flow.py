@@ -53,9 +53,7 @@ def test_fluxo_taxa_base_imobiliario_score_baixo():
     assert taxa == pytest.approx(esperado, abs=0.0001)
 
 
-# ==============================================================================
 # Caminhos Def-Use — Modalidade ESTUDANTIL (taxa base diferente)
-# ==============================================================================
 
 def test_fluxo_taxa_base_estudantil_score_excelente():
     """

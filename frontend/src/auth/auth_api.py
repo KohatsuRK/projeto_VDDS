@@ -12,8 +12,9 @@ Padrão de autenticação da API (implementado pela equipe):
 """
 
 import requests
+import os
 
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.environ.get("API_URL", "http://localhost:8000")
 TIMEOUT = 10
 
 

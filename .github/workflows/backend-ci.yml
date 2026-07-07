@@ -5,14 +5,18 @@ on:
     branches: [ main, master ]
     paths:
       - 'backend/**'
+      - 'frontend/**'
   pull_request:
     branches: [ main, master ]
     paths:
       - 'backend/**'
+      - 'frontend/**'
 
 jobs:
   test-and-verify:
     runs-on: ubuntu-latest
+    env:
+      API_URL: http://127.0.0.1:8000
 
     steps:
     - name: Copiar código do repositório
@@ -28,7 +32,32 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r backend/requirements.txt
+        pip install -r frontend/src/requirements.txt
         pip install pytest radon mutmut
+
+    - name: Iniciar backend e frontend
+      run: |
+        cd backend
+        nohup uvicorn credit_engine.main:app --app-dir src --host 127.0.0.1 --port 8000 > /tmp/backend.log 2>&1 &
+
+        cd ../frontend/src
+        nohup python -m streamlit run app.py --server.address 127.0.0.1 --server.port 8501 --server.headless true > /tmp/frontend.log 2>&1 &
+
+    - name: Aguardar serviços ficarem prontos
+      run: |
+        for attempt in $(seq 1 30); do
+          if curl -fsS http://127.0.0.1:8000/health >/dev/null && curl -fsS http://127.0.0.1:8501 >/dev/null; then
+            exit 0
+          fi
+
+          sleep 2
+        done
+
+        echo "Backend log:"
+        cat /tmp/backend.log || true
+        echo "Frontend log:"
+        cat /tmp/frontend.log || true
+        exit 1
 
     - name: 1. Executar Testes Unitários (Pytest)
       run: |

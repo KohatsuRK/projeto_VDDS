@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -63,7 +62,6 @@ def get_user_service() -> UserService:
 
     return user_service
 
-# Recupera o usuário autenticado a partir do token enviado no header.
 # Recupera o usuário autenticado a partir do token enviado no header.
 def get_current_user(
     authorization: str | None = Header(default=None),
